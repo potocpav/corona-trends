@@ -23,13 +23,13 @@
               <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Country</a>
                   <div class="dropdown-menu">
-                    <a class="dropdown-item" href="#tab1" aria-controls="tab1"><img src="stats/04-01/Czechia_stats.png"></a>
-                    <a class="dropdown-item" href="#tab2" aria-controls="tab2"><img src="stats/04-01/Italy_stats.png"></a>
-                    <a class="dropdown-item" href="#tab3" aria-controls="tab3">Something else here</a>
-                    <a class="dropdown-item" href="#tab4" aria-controls="tab4">Separated link</a>
+                    <a id="tab1h" class="dropdown-item" role="tab" aria-controls="tab1" aria-selected="true">Czechia</a>
+                    <a id="tab2h" class="dropdown-item" role="tab" aria-controls="tab2" aria-selected="false">Italy</a>
+                    <a id="tab3h" class="dropdown-item" role="tab" aria-controls="tab3" aria-selected="false">Something else here</a>
+                    <a id="tab4h" class="dropdown-item" role="tab" aria-controls="tab4" aria-selected="false">Separated link</a>
                   </div>
             </li>
-            <li class="nav-item">
+            <!-- <li class="nav-item">
               <a class="nav-link active" id="tab1h" data-toggle="tab" href="#tab1" role="tab" aria-controls="tab1" aria-selected="true">Hello, world!</a>
             </li>
             <li class="nav-item">
@@ -43,14 +43,14 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" id="tab5h" data-toggle="tab" href="#tab5" role="tab" aria-controls="tab5" aria-selected="false">Animation</a>
-            </li>
+            </li> -->
           </ul>
           <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade show active" id="tab1" role="tabpanel" aria-labelledby="tab1h">
-              srtarstarst
+              <img src="04-01/Czechia_stats.png" style="width: 100%">
             </div>
             <div class="tab-pane fade" id="tab2" role="tabpanel" aria-labelledby="tab2h">
-              sratarstarst
+              <img src="04-01/Italy_stats.png" style="width: 100%">
             </div>
             <div class="tab-pane fade" id="tab3" role="tabpanel" aria-labelledby="tab3h">
               tsartarstarst
