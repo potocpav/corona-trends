@@ -42,6 +42,7 @@ q2 = np.quantile(fs, 0.5, 0)
 q3 = np.quantile(fs, 0.95, 0)
 
 plt.figure(figsize=(15, 15))
+plt.suptitle(country)
 
 ax = plt.subplot(221)
 plt.title('Total confirmed cases')
