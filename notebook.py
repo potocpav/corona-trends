@@ -130,8 +130,8 @@ items_string = ""
 for country in sorted(countries):
     print(country)
     if True or create_chart(country):
-        items_string += f"""<li><a href="{day:02d}-{month:02d}/{country}.svg">{country}</a></li>\n"""
-index = template.format(last_update=f"{day:02d}-{month:02d}-{year:02d}", items=items_string)
+        items_string += f"""<li><a href="{month:02d}-{day:02d}/{country}.svg">{country}</a></li>\n"""
+index = template.format(last_update=f"{year:02d}-{month:02d}-{day:02d}", items=items_string)
 with open('stats/index.html', 'w') as f:
     f.write(index)
 
