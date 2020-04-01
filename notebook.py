@@ -25,7 +25,7 @@ import scipy.optimize
 import numpy as np
 
 countries
-country = "US"
+country = "Czechia"
 cases = by_country(country)
 deaths = deaths_by_country(country)
 
@@ -42,11 +42,10 @@ q2 = np.quantile(fs, 0.5, 0)
 q3 = np.quantile(fs, 0.95, 0)
 
 plt.figure(figsize=(15, 15))
-plt.suptitle(country)
 
 ax = plt.subplot(221)
 plt.title('Total confirmed cases')
-plt.bar(x, cases, color='grey', label=country)
+plt.bar(x, cases, 1, color='grey', label=country)
 plt.plot(x_trend, q2, linestyle='dashed', color='black', label='Logistic Regression')
 plt.fill_between(x_trend, q1, q3, color='grey', alpha=0.3, label="0.95 Confidence")
 plt.ylim(0, q3[-1] * 1.1)
@@ -61,7 +60,7 @@ dyq2 = q2[1:] - q2[:-1]
 dyq3 = q3[1:] - q3[:-1]
 plt.subplot(222)
 plt.title('New confirmed cases per day')
-plt.bar(x[1:], cases[1:] - cases[:-1], color='grey', label=country)
+plt.bar(x[1:], cases[1:] - cases[:-1], 1, color='grey', label=country)
 plt.plot(x_trend[1:], dyq2, linestyle='dashed', color='black', label='Normal Distribution')
 plt.fill_between(x_trend[1:], dyq1, dyq3, color='grey', alpha=0.3, label="0.95 Confidence")
 plt.xlim(0, 100)
@@ -71,31 +70,36 @@ plt.legend()
 
 
 death_rate = 0.01
-confirm_rate_q1 = q2[len(x)-delay] / (deaths[-1] / 0.002)
-confirm_rate_q2 = q2[len(x)-delay] / (deaths[-1] / 0.006)
-confirm_rate_q3 = q2[len(x)-delay] / (deaths[-1] / 0.013)
+confirm_rate_q1 = np.minimum(1, q1[len(x)-delay] / (deaths[-1] / 0.002))
+confirm_rate_q2 = np.minimum(1, q2[len(x)-delay] / (deaths[-1] / 0.006))
+confirm_rate_q3 = np.minimum(1, q3[len(x)-delay] / (deaths[-1] / 0.013))
 
 ax = plt.subplot(223)
 delay = np.arange(1, 16)
 plt.title('% of Cases Confirmed')
 ax.grid('major')
-ax.plot(delay, confirm_rate_q2 * 100, color='black', label='Italy')
+ax.plot(delay, confirm_rate_q2 * 100, color='black', label='Mean')
 plt.fill_between(delay, confirm_rate_q1 * 100, confirm_rate_q3 * 100, color='grey', alpha=0.3, label="0.95 Confidence")
 ax.set_ylabel('Infections Confirmed [%]')
+ax.set_xlim(1, 14)
 plt.xlabel('Death Delay from Confirmation [days]')
+plt.legend()
 
 ax = plt.subplot(224)
 delay = np.arange(1, 16)
 ax2 = ax.twinx()
 plt.title('Total Infected & Deaths')
 ax.grid('major')
-ax.plot(delay, q2[-1] / confirm_rate_q2 / 1000, color='black', label='Italy')
+ax.plot(delay, q2[-1] / confirm_rate_q2 / 1000, color='black', label='Mean')
+ax.fill_between(delay, q3[-1] / confirm_rate_q1 / 1000, q1[-1] / confirm_rate_q3 / 1000, color='grey', alpha=0.3, label="0.95 Confidence")
 ax2.set_ylim(ax.get_ylim()[0] / 100, ax.get_ylim()[1] / 100)
 ax.set_ylabel('Number Infected up to Now [×1000]')
 ax.set_xlabel('Death Delay from Confirmation [days]')
 ax2.set_ylabel("Inevitable Deaths [×1000]")
+ax.set_xlim(1, 14)
+ax.legend()
 
-plt.savefig(f'stats/04-01/{country}_stats.png', dpi=90)
+plt.savefig(f'stats/04-01/{country}_stats.svg', dpi=90)
 
 
 # %%
