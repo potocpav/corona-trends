@@ -56,15 +56,15 @@ def create_chart(country):
 
     ax = plt.subplot(221)
     plt.title('Total confirmed cases')
-    plt.bar(x, cases, 1, color='grey', label=country)
-    plt.plot(x_trend, q2, linestyle='dashed', color='black', label='Logistic Regression')
+    plt.bar(x, cases / 1000, 1, color='grey', label=country)
+    plt.plot(x_trend, q2 / 1000, linestyle='dashed', color='black', label='Logistic Regression')
     if disp_confidence:
-        plt.fill_between(x_trend, q1, q3, color='grey', alpha=0.3, label="0.95 Confidence")
-    plt.ylim(0, q3[-1] * 1.1)
+        plt.fill_between(x_trend, q1 / 1000, q3 / 1000, color='grey', alpha=0.3, label="0.95 Confidence")
+    plt.ylim(0, q3[-1] * 1.1 / 1000)
     plt.xlim(0, 100)
     plt.xlabel('Time [days]')
-    plt.ylabel('Number of people [-]')
-    plt.hlines(q2[-1], 0, 100, color='grey', linestyle='dotted', label=f'{int(q2[-1]/1000)}k Cases')
+    plt.ylabel('Cases [×1000]')
+    plt.hlines(q2[-1] / 1000, 0, 100, color='grey', linestyle='dotted', label=f'{int(q2[-1]/1000)}k Cases')
     plt.legend()
 
     dyq1 = q1[1:] - q1[:-1]
@@ -77,18 +77,15 @@ def create_chart(country):
     if disp_confidence:
         plt.fill_between(x_trend[1:], dyq1, dyq3, color='grey', alpha=0.3, label="0.95 Confidence")
     plt.xlim(0, 100)
-    plt.ylabel('Number of people [-]')
+    plt.ylabel('New Cases [-]')
     plt.xlabel('Time [days]')
     plt.legend()
 
-
-    # fs.shape
-    # np.quantile(np.random.normal(0.006, 0.002, 10000), 0.975)
-    # (fs[:,len(x) - delay] / deaths[-1]).shape
+    # Use the median prediction for all the quantiles
     delay = np.arange(1, 16)
-    confirm_rate_q1 = np.clip(q1[len(x)-delay] / (deaths[-1] / 0.002), 0, 1)
+    confirm_rate_q1 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.002), 0, 1)
     confirm_rate_q2 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.006), 0, 1)
-    confirm_rate_q3 = np.clip(q3[len(x)-delay] / (deaths[-1] / 0.013), 0, 1)
+    confirm_rate_q3 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.013), 0, 1)
 
     ax = plt.subplot(223)
     plt.title('% of Cases Confirmed')
@@ -108,7 +105,7 @@ def create_chart(country):
     ax.grid('major')
     ax.plot(delay, q2[-1] / confirm_rate_q2 / 1000, color='black', label='Mean')
     if disp_confidence:
-        ax.fill_between(delay, q3[-1] / confirm_rate_q1 / 1000, q1[-1] / confirm_rate_q3 / 1000, color='grey', alpha=0.3, label="0.95 Confidence")
+        ax.fill_between(delay, q2[-1] / confirm_rate_q1 / 1000, q2[-1] / confirm_rate_q3 / 1000, color='grey', alpha=0.3, label="0.95 Confidence")
     ax2.set_ylim(ax.get_ylim()[0] / 100, ax.get_ylim()[1] / 100)
     ax.set_ylabel('Number Infected up to Now [×1000]')
     ax.set_xlabel('Death Delay from Confirmation [days]')
@@ -130,7 +127,7 @@ template = open('stats/index.html.in', 'r').read()
 items_string = ""
 for country in sorted(countries):
     print(country)
-    if True or create_chart(country):
+    if create_chart(country):
         items_string += f"""<li><a href="{month:02d}-{day:02d}/{country}.svg">{country}</a></li>\n"""
 index = template.format(last_update=f"{year:02d}-{month:02d}-{day:02d}", items=items_string)
 with open('stats/index.html', 'w') as f:
