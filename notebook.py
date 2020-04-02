@@ -26,7 +26,7 @@ us_cases = by_country("US")
 
 # %% Logistic curve through Italy
 
-country = "Singapore"
+country = "Czechia"
 
 
 def create_chart(country):
@@ -82,7 +82,9 @@ def create_chart(country):
     plt.legend()
 
 
-    death_rate = 0.01
+    # fs.shape
+    # np.quantile(np.random.normal(0.006, 0.002, 10000), 0.975)
+    # (fs[:,len(x) - delay] / deaths[-1]).shape
     delay = np.arange(1, 16)
     confirm_rate_q1 = np.clip(q1[len(x)-delay] / (deaths[-1] / 0.002), 0, 1)
     confirm_rate_q2 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.006), 0, 1)
@@ -120,9 +122,8 @@ def create_chart(country):
     return True
 
 # %%
-plt.ion()
-
-plt.show()
+# plt.ion()
+# plt.show()
 
 plt.ioff()
 template = open('stats/index.html.in', 'r').read()
