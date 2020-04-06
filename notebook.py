@@ -11,10 +11,10 @@ raw_deaths = list(csv.reader(open('COVID-19/csse_covid_19_data/csse_covid_19_tim
 
 by_country = lambda country: np.sum([[int(i) for i in x[5:]] for x in raw if x[1] == country], axis=0)
 deaths_by_country = lambda country: np.sum([[int(i) for i in x[5:]] for x in raw_deaths if x[1] == country], axis=0)
-country = "China"
-countries = np.array(list(set(x[1] for x in raw[1:])))
-data = np.array([by_country(c) for c in countries])
-countries = countries[data[:,-1] > 500]
+
+all_countries = np.array(list(set(x[1] for x in raw[1:])))
+data = np.array([by_country(c) for c in all_countries])
+countries = all_countries[data[:,-1] > 500]
 xs = np.arange(len(by_country("Czechia")))
 
 month, day, year = [int(i) for i in raw[0][-1].split('/')]
@@ -26,116 +26,13 @@ us_cases = by_country("US")
 
 # %% Logistic curve through Italy
 
-country = "Czechia"
+# country = "Czechia"
 
-
-def create_chart(country):
-    cases = by_country(country)
-    deaths = deaths_by_country(country)
-
-    def f(x, a, c, d):
-        return a / (1. + np.exp(-c * (x - d)))
-
-    x = np.arange(len(cases))
-    x_trend = np.arange(101)
-
-    try:
-        params, covs = scipy.optimize.curve_fit(f, x, cases, p0=[1e5, 0.2, 60])
-    except RuntimeError:
-        print(f"Failed curve fit for {country}.")
-        return False
-    fs = np.array([f(x_trend, *p) for p in np.random.multivariate_normal(params, covs, size=10000)])
-    q1 = np.quantile(fs, 0.05, 0)
-    q2 = np.quantile(fs, 0.5, 0)
-    q3 = np.quantile(fs, 0.95, 0)
-
-    disp_confidence = q1[-1] > 0 and q3[-1] > 0
-
-    fig = plt.figure(figsize=(15, 15))
-    plt.suptitle(country)
-
-    ax = plt.subplot(221)
-    plt.title('Total confirmed cases')
-    plt.bar(x, cases / 1000, 1, color='grey', label=country)
-    plt.plot(x_trend, q2 / 1000, linestyle='dashed', color='black', label='Logistic Regression')
-    if disp_confidence:
-        plt.fill_between(x_trend, q1 / 1000, q3 / 1000, color='grey', alpha=0.3, label="0.95 Confidence")
-    plt.ylim(0, q3[-1] * 1.1 / 1000)
-    plt.xlim(0, 100)
-    plt.xlabel('Time [days]')
-    plt.ylabel('Cases [×1000]')
-    plt.hlines(q2[-1] / 1000, 0, 100, color='grey', linestyle='dotted', label=f'{int(q2[-1]/1000)}k Cases')
-    plt.legend()
-
-    dyq1 = q1[1:] - q1[:-1]
-    dyq2 = q2[1:] - q2[:-1]
-    dyq3 = q3[1:] - q3[:-1]
-    plt.subplot(222)
-    plt.title('New confirmed cases per day')
-    plt.bar(x[1:], cases[1:] - cases[:-1], 1, color='grey', label=country)
-    plt.plot(x_trend[1:], dyq2, linestyle='dashed', color='black', label='Normal Distribution')
-    if disp_confidence:
-        plt.fill_between(x_trend[1:], dyq1, dyq3, color='grey', alpha=0.3, label="0.95 Confidence")
-    plt.xlim(0, 100)
-    plt.ylabel('New Cases [-]')
-    plt.xlabel('Time [days]')
-    plt.legend()
-
-    # Use the median prediction for all the quantiles
-    delay = np.arange(1, 16)
-    confirm_rate_q1 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.002), 0, 1)
-    confirm_rate_q2 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.006), 0, 1)
-    confirm_rate_q3 = np.clip(q2[len(x)-delay] / (deaths[-1] / 0.013), 0, 1)
-
-    ax = plt.subplot(223)
-    plt.title('% of Cases Confirmed')
-    ax.grid('major')
-    ax.plot(delay, confirm_rate_q2 * 100, color='black', label='Mean')
-    if disp_confidence:
-        plt.fill_between(delay, confirm_rate_q1 * 100, confirm_rate_q3 * 100, color='grey', alpha=0.3, label="0.95 Confidence")
-    ax.set_ylabel('Infections Confirmed [%]')
-    ax.set_xlim(1, 14)
-    plt.xlabel('Death Delay from Confirmation [days]')
-    plt.legend()
-
-    ax = plt.subplot(224)
-    delay = np.arange(1, 16)
-    ax2 = ax.twinx()
-    plt.title('Total Infected & Deaths')
-    ax.grid('major')
-    ax.plot(delay, q2[-1] / confirm_rate_q2 / 1000, color='black', label='Mean')
-    if disp_confidence:
-        ax.fill_between(delay, q2[-1] / confirm_rate_q1 / 1000, q2[-1] / confirm_rate_q3 / 1000, color='grey', alpha=0.3, label="0.95 Confidence")
-    ax2.set_ylim(ax.get_ylim()[0] / 100, ax.get_ylim()[1] / 100)
-    ax.set_ylabel('Number Infected up to Now [×1000]')
-    ax.set_xlabel('Death Delay from Confirmation [days]')
-    ax2.set_ylabel("Inevitable Deaths [×1000]")
-    ax.set_xlim(1, 14)
-    ax.legend()
-
-    os.makedirs(f'stats/{month:02d}-{day:02d}', exist_ok=True)
-    plt.savefig(f'stats/{month:02d}-{day:02d}/{country}.svg', dpi=90)
-    plt.close(fig)
-    return True
-
-# %%
-# plt.ion()
-# plt.show()
-
-plt.ioff()
-template = open('stats/index.html.in', 'r').read()
-items_string = ""
-for country in sorted(countries):
-    print(country)
-    if create_chart(country):
-        items_string += f"""<li><a href="{month:02d}-{day:02d}/{country}.svg">{country}</a></li>\n"""
-index = template.format(last_update=f"{year:02d}-{month:02d}-{day:02d}", items=items_string)
-with open('stats/index.html', 'w') as f:
-    f.write(index)
-
-# %%
+# %% Loglog minutephysics plot
 
 q = 1.125 ** 7
+
+all_countries[(data[:,-1] > 4e3) & (data[:,-1] < 8e3) & (data[:,-1] - data[:,-7] > 1e3) & (data[:,-1] - data[:,-7] < 1e4)]
 
 
 plt.figure(figsize=(12,8))
@@ -143,8 +40,9 @@ plt.figure(figsize=(12,8))
 _ = plt.loglog(data[:,7:].T, (data[:,7:] - data[:,:-7]).T, color='lightgrey')
 _ = plt.loglog([], [], color='lightgrey', label='Countries')
 plt.loglog(czech_cases[7:].T, (czech_cases[7:] - czech_cases[:-7]).T, color='red', label='Czechia')
-plt.plot([q, q * 1e5], np.array([q - 1, (q-1) * 1e5]), color='gray', linestyle='dashed', label='1/8 Spread Rate')
-plt.grid('major')
+# plt.loglog(by_country("Norway")[7:].T, (by_country("Norway")[7:] - by_country("Norway")[:-7]).T, color='blue', label='Norway')
+plt.plot([q, q * 1e6], np.array([q - 1, (q-1) * 1e6]), color='gray', linestyle='dashed', label='1/8 Spread Rate')
+plt.grid('minor')
 plt.xlabel('Total Cumulative Cases')
 plt.title('Trends of Countries with > 500 Cases')
 plt.ylabel('New Weekly Cases')
@@ -155,14 +53,40 @@ plt.savefig('Trend2.png', dpi=90)
 
 # %%
 
-plt.semilogy(by_country("China"))
+growth_rate = (data[:,-1] / data[:,-7]) ** (1/6)
+predictions = data[:,-1,np.newaxis] * growth_rate[np.newaxis].T ** [np.arange(20)]
+predictions.shape
+top_ix = np.argsort(-data[:,-1])[:8]
+all_countries[top_ix]
+plt.xlim(50, 80)
+# plt.semilogy()
+plt.ylim(1e3, 5e5)
+_ = plt.plot(data[top_ix].T)
+_ = plt.plot(np.arange(70, 70 + 20), predictions[top_ix].T, linestyle='dotted')
 
-plt.semilogy(xs, data.T)
+# %% Fit a distribution to data from paper
 
-czech_cases[1:] - czech_cases[:-1]
-plt.plot(czech_cases)
-plt.semilogy(czech_cases)
+weibull = lambda x, k, l: (k/l)*(x/l)**(k-1)*np.exp(-(x/l)**k)
+import scipy.special
 
+g = lambda p: [p[1] * scipy.special.gamma(1 + 1/p[0]) - 8.6, p[1] * np.log(2) ** (1/p[0]) - 6.7]
+k, l = scipy.optimize.least_squares(g, [2, 7], jac='3-point').x
+scipy.optimize.least_squares(g, [2, 7], jac='3-point', method='dogbox')
+
+g([2,7])
+
+x = np.arange(0.1, 20, 1)
+pdf =  weibull(x, k, l)
+np.sum(pdf * x), x[np.argmax(pdf)]
+plt.plot(pdf)
+
+f = lambda k: 6.7 * np.log(2) ** (-1/k) * scipy.special.gamma(1 + 1/k) - 8.6
+plt.plot(np.linspace(1, 2, 100), f(np.linspace(1, 2, 100)))
+
+
+plt.ion()
+plt.plot()
+plt.show()
 # %%
 
 xs = np.arange(106)
